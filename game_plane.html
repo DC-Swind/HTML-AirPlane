@@ -1,0 +1,229 @@
+<!DOCTYPE html/>
+<html>
+<head>
+<title>Plane</title>
+<style>
+td{
+width:15px;
+height:15px;
+background-color:white;
+border:0;
+}
+.player{
+width:15px;
+height:15px;
+background-color:green;
+}
+.dead{
+	width:15px;
+	height:15px;
+	background:url("dead.jpg");
+}
+.enemy{
+width:15px;
+height:15px;
+background-color:red;
+}
+.ball{
+width:15px;
+height:15px;
+font-size:10px;
+text-align:center;
+}
+.e_ball{
+width:15px;
+height:15px;
+font-size:10px;
+color:red;
+text-align:center;
+}
+.map{
+width:500px;
+display:inline;
+float:left;
+}
+.info{
+width:200px;
+position:relative;
+float:left;
+margin-left:10px;
+display:inline;
+}
+table{
+border:solid;
+}
+</style>
+<script>
+var max_width = 25,max_height = 30;
+var RIGHT =1,LEFT =2,UP =3,DOWN =4,ATTACK = 10;
+var x=10,y=20;
+ballx = new Array();
+bally = new Array();
+ballv = new Array();
+var ball = 0;
+var map = new Array();
+
+var enemy_x = new Array();
+var enemy_y = new Array();
+var enemy_v = new Array();
+var enemy_n = 0;
+
+var e_ballx = new Array();
+var e_bally = new Array();
+var e_ballv = new Array();
+var e_ball = 0;
+
+var dead = false;
+
+
+function init()
+{
+	for(var i=0; i<max_height; i++){
+		map[i] = new Array();
+		for (var j=0; j<max_width; j++) map[i][j]=0;
+	}
+}
+function draw()
+{
+	init();
+	var write="";
+	
+	for (var j=1; j<=enemy_n; j++)
+		for (var i=1; i<=ball; i++)if (ballx[i] == enemy_x[j] && bally[i] == enemy_y[j]){
+			ballv[i] = 0; enemy_v[j]=0; break;
+		}
+	for (var i=1; i<=ball; i++) if (ballv[i]==1 && ballx[i]>=0) map[ballx[i]][bally[i]] = 2;
+	////
+	for (var i=1; i<=e_ball; i++){
+		if (e_ballx[i] == x && e_bally[i] ==y) dead = true; else map[e_ballx[i]][e_bally[i]] = 5;
+	}
+	////
+	for (var i=1; i<=enemy_n; i++)if (enemy_v[i]==1 && enemy_x[i]<max_height){
+		map[enemy_x[i]][enemy_y[i]]=3;
+		if (enemy_x[i] == x && enemy_y[i] == y) dead = true;	
+	}	
+	if (dead) map[x][y] = 4; else map[x][y] = 1;
+	for(var i=0;i<max_height; i++){
+		write+="<tr>";
+		for (var j=0; j<max_width; j++){
+			if(map[i][j]==1)  write+="<td class='player'></td>"; 
+			if(map[i][j]==2)  write+="<td class='ball'>*</td>";
+			if(map[i][j]==3)  write+="<td class='enemy'></td>";
+			if(map[i][j]==4)  write+="<td class='dead'></td>";
+			if(map[i][j]==5)  write+="<td class='e_ball'>*</td>";
+			if(map[i][j]==0)  write+="<td></td>";
+			
+		}
+		write+="</tr>";
+	}
+	document.getElementById("mapp").innerHTML = write;
+}
+
+function move(id)
+{
+	if(dead) return 0;
+	switch(id){
+	case 1: if(y+1<max_width) y++; break;
+	case 2: if(y-1>=0) y--; break;
+	case 3: if (x-1>=0) x--; break;
+	case 4: if (x+1<max_height) x++; break;
+	case 10: ball++; ballv[ball]=1; ballx[ball] = x-1; bally[ball] = y; break;
+	}
+	draw();
+}
+document.onkeydown = function(event){
+	var turn;
+	switch(event.keyCode){
+	case 65: turn = LEFT; break;
+	case 83: turn = DOWN; break;
+	case 68: turn = RIGHT; break;
+	case 87: turn = UP; break;
+	case 74: turn = ATTACK; break;
+	default: turn = -1; 
+	}
+	move(turn);
+}
+function ball_move()
+{
+	if (ball<1) return 0;
+	var i=1;
+	while(i<=ball){
+		if (ballv[i]==1 && ballx[i]-1>0) {ballx[i]--; i++; continue;}
+		for (var j=i; j<ball; j++){ ballv[j] = ballv[j+1]; ballx[j] = ballx[j+1]; bally[j] = bally[j+1];}
+		ball--;
+	}
+	//alert("ball_move");
+	draw();
+		//for (var i=1; i<=ball; i++)
+}
+function enemy_move()
+{
+	//alert(enemy);
+	if(enemy_n<1) return 0;
+	var i=1;
+	while(i<=enemy_n){
+		if (enemy_v[i] ==1 && enemy_x[i]+1<max_height){enemy_x[i]++; i++; continue;}
+		for (var j=i; j<enemy_n; j++){enemy_v[j] = enemy_v[j+1]; enemy_x[j] = enemy_x[j+1]; enemy_y[j] = enemy_y[j+1];}
+		enemy_n--;
+		
+	}
+	draw();
+}
+function enemy()
+{
+	//alert(10000);
+	var tmpy = Math.ceil(Math.random()*(max_width-1))+1;
+	enemy_n++;
+	//alert(enemy_n);
+	enemy_x[enemy_n] = 1;
+	enemy_y[enemy_n] = tmpy;
+	enemy_v[enemy_n] = 1;
+}
+function reborn()
+{
+	dead = false;
+	draw();
+}
+function move_e_ball()
+{
+	var i=1;
+	while(i<=e_ball){
+		if (e_ballv[i]==1 && e_ballx[i]+2<max_height) {e_ballx[i]++; i++; continue;}
+		for (var j=i; j<e_ball; j++){ e_ballv[j] = e_ballv[j+1]; e_ballx[j] = e_ballx[j+1]; e_bally[j] = e_bally[j+1];}
+		e_ball--;
+	}
+	draw();
+}
+function produce_e_ball()
+{
+	for (var j=1; j<=enemy_n; j++){
+		var tmp = 1;//Math.ceil(Math.random()*8);
+		if (tmp == 1){
+			e_ball ++;
+			e_ballx[e_ball] = enemy_x[j]+1;
+			e_bally[e_ball] = enemy_y[j];
+			e_ballv[e_ball] = 1;
+		}
+	}
+	//alert(e_ball);
+	draw();
+}
+
+var controltime1 = setInterval(ball_move,400);
+var controltime2 = setInterval(enemy_move,800);
+var controltime3 = setInterval(enemy,1500);
+var controltime4 = setInterval(move_e_ball,200);
+var controltime5 = setInterval(produce_e_ball,2000);
+</script>
+</head>
+<body onload="draw()" >
+<div class="map">
+<table id="mapp">
+</table>
+</div>
+<div class="info">
+	<button onclick="reborn()">Reborn</button>
+	<button onclick="int=window.clearInterval(int)"> Stop interval</button>
+</div>
+</body>
+</html>
